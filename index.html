@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OutfitGen - AI Style Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --color-cream: #FAF7F0;
+  --color-beige: #E8DCC4;
+  --color-warm-brown: #8B7355;
+  --color-dark-brown: #5C4A3A;
+  --color-black: #1A1A1A;
+  --color-accent: #D4A574;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, var(--color-cream) 0%, #fff 100%);
+  min-height: 100vh;
+  color: var(--color-black);
+}
+
+/* NAVBAR */
+.navbar {
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(232,220,196,0.4);
+  position: sticky; top: 0; z-index: 50;
+}
+.navbar-content {
+  max-width: 1200px; margin: 0 auto;
+  padding: 1.25rem 2rem;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.navbar-logo { font-size: 1.6rem; font-weight: 900; letter-spacing: -0.5px; color: var(--color-black); }
+.navbar-links { display: flex; gap: 2rem; }
+.navbar-links a { color: var(--color-dark-brown); text-decoration: none; font-weight: 500; font-size: 0.95rem; transition: color 0.2s; }
+.navbar-links a:hover { color: var(--color-black); }
+
+/* HERO */
+.hero { max-width: 1200px; margin: 0 auto; padding: 5rem 2rem 3rem; position: relative; }
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: var(--color-beige); color: var(--color-dark-brown);
+  padding: 0.45rem 1rem; border-radius: 50px;
+  font-size: 0.85rem; font-weight: 600; margin-bottom: 1.75rem;
+}
+.hero-badge svg { width: 15px; height: 15px; }
+.hero h1 {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 900; line-height: 1.1;
+  letter-spacing: -2px; margin-bottom: 1.25rem;
+}
+.hero h1 span { color: var(--color-warm-brown); display: block; }
+.hero p { font-size: 1.15rem; line-height: 1.7; color: var(--color-dark-brown); max-width: 580px; }
+.hero-deco {
+  position: absolute; top: 15%; right: 4%;
+  width: 280px; height: 280px;
+  background: radial-gradient(circle, var(--color-beige) 0%, transparent 70%);
+  opacity: 0.35; border-radius: 50%; pointer-events: none; z-index: -1;
+}
+
+/* MAIN */
+.main { max-width: 1200px; margin: 0 auto; padding: 2rem 2rem 5rem; }
+
+/* STYLE SELECTOR */
+.section-title { font-size: 2.2rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 0.5rem; }
+.section-sub { font-size: 1.05rem; color: var(--color-dark-brown); margin-bottom: 2.5rem; }
+.style-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 1.25rem; margin-bottom: 3rem;
+}
+.style-card {
+  background: white; border: 2px solid transparent;
+  border-radius: 16px; padding: 1.75rem 1.25rem;
+  cursor: pointer; text-align: left;
+  transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
+  position: relative; overflow: hidden;
+}
+.style-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.08); }
+.style-card.selected {
+  border-color: var(--color-accent);
+  background: linear-gradient(135deg, #fff 0%, var(--color-cream) 100%);
+  box-shadow: 0 8px 20px rgba(212,165,116,0.18);
+}
+.card-icon {
+  width: 48px; height: 48px;
+  background: var(--color-beige); border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 1rem; transition: background 0.25s;
+  color: var(--color-dark-brown);
+}
+.style-card.selected .card-icon { background: var(--color-accent); color: white; }
+.card-icon svg { width: 22px; height: 22px; }
+.card-label { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.3rem; }
+.card-desc { font-size: 0.8rem; color: var(--color-dark-brown); opacity: 0.8; }
+.card-dot {
+  position: absolute; top: 0.9rem; right: 0.9rem;
+  width: 11px; height: 11px;
+  background: var(--color-accent); border-radius: 50%;
+  animation: pulse 2s infinite; display: none;
+}
+.style-card.selected .card-dot { display: block; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
+
+/* GENERATE BUTTON */
+.generate-wrap { display: flex; justify-content: center; margin: 1rem 0 2.5rem; }
+.btn-generate {
+  background: var(--color-black); color: white;
+  font-size: 1.05rem; font-weight: 700;
+  padding: 1rem 2.75rem; border-radius: 12px; border: none;
+  cursor: pointer; display: flex; align-items: center; gap: 0.6rem;
+  transition: background 0.25s, transform 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+.btn-generate:hover:not(:disabled) { background: var(--color-warm-brown); transform: scale(1.04); }
+.btn-generate:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-generate svg { width: 20px; height: 20px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinning { animation: spin 0.8s linear infinite; }
+
+/* OUTFIT DISPLAY */
+.outfit-section { margin-top: 1rem; }
+.outfit-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 1.75rem;
+}
+.outfit-header h2 { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px; }
+.btn-regen {
+  display: flex; align-items: center; gap: 0.4rem;
+  background: white; border: 1.5px solid var(--color-beige);
+  color: var(--color-dark-brown); font-weight: 600; font-size: 0.9rem;
+  padding: 0.6rem 1.25rem; border-radius: 10px; cursor: pointer;
+  transition: background 0.2s; font-family: 'Inter', sans-serif;
+}
+.btn-regen:hover { background: var(--color-cream); }
+.btn-regen svg { width: 16px; height: 16px; }
+
+/* OUTFIT CARD */
+.outfit-card {
+  background: white; border: 1px solid var(--color-beige);
+  border-radius: 20px; padding: 2.25rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  transition: box-shadow 0.25s;
+}
+.outfit-card:hover { box-shadow: 0 12px 32px rgba(0,0,0,0.08); }
+.outfit-card-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 1.75rem; padding-bottom: 1.25rem;
+  border-bottom: 2px solid var(--color-cream);
+}
+.outfit-card-title { font-size: 1.35rem; font-weight: 700; text-transform: capitalize; }
+.outfit-badge {
+  background: white; border: 1.5px solid var(--color-beige);
+  color: var(--color-dark-brown); padding: 0.35rem 0.85rem;
+  border-radius: 8px; font-size: 0.8rem; font-weight: 600;
+  text-transform: capitalize;
+}
+.outfit-items { display: grid; gap: 1rem; margin-bottom: 1.5rem; }
+.outfit-item {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 1.1rem 1.25rem; background: var(--color-cream);
+  border-radius: 12px; transition: background 0.2s;
+}
+.outfit-item:hover { background: var(--color-beige); }
+.item-icon {
+  width: 42px; height: 42px; background: white; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--color-warm-brown); flex-shrink: 0;
+}
+.item-icon svg { width: 18px; height: 18px; }
+.item-info { flex: 1; }
+.item-label {
+  font-size: 0.7rem; font-weight: 700;
+  color: var(--color-dark-brown); text-transform: uppercase;
+  letter-spacing: 0.5px; opacity: 0.65; display: block; margin-bottom: 2px;
+}
+.item-name { font-size: 0.97rem; font-weight: 600; }
+.color-dot {
+  width: 26px; height: 26px; border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15); flex-shrink: 0;
+}
+.styling-tip {
+  display: flex; align-items: flex-start; gap: 0.75rem;
+  padding: 1.1rem; background: linear-gradient(135deg,#FFF9F0,var(--color-cream));
+  border-radius: 12px; border-left: 4px solid var(--color-accent);
+}
+.tip-icon {
+  width: 34px; height: 34px; background: var(--color-accent);
+  color: white; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.tip-icon svg { width: 16px; height: 16px; }
+.tip-text { font-size: 0.97rem; color: var(--color-dark-brown); font-weight: 500; padding-top: 0.35rem; }
+
+/* HISTORY */
+.history-section { margin-top: 4rem; }
+.history-title { font-size: 1.6rem; font-weight: 700; margin-bottom: 1.75rem; }
+.history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px,1fr)); gap: 1.75rem; }
+
+/* TOAST */
+.toast {
+  position: fixed; bottom: 2rem; right: 2rem;
+  padding: 0.85rem 1.5rem; border-radius: 12px;
+  font-size: 0.9rem; font-weight: 600; color: white;
+  opacity: 0; transform: translateY(12px);
+  transition: opacity 0.3s, transform 0.3s;
+  z-index: 999; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.success { background: #3a7d44; }
+.toast.error { background: #C74E3A; }
+
+/* FOOTER */
+footer {
+  background: var(--color-black); color: var(--color-cream);
+  padding: 2.5rem 2rem; margin-top: 5rem;
+}
+.footer-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 1.25rem;
+}
+.footer-inner p { font-size: 0.9rem; opacity: 0.75; }
+.footer-links { display: flex; gap: 1.75rem; }
+.footer-links a { color: var(--color-cream); text-decoration: none; font-size: 0.9rem; opacity: 0.75; transition: opacity 0.2s; }
+.footer-links a:hover { opacity: 1; color: var(--color-accent); }
+
+/* MODAL PAGES */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(26,26,26,0.6);
+  backdrop-filter: blur(6px);
+  display: none; justify-content: center; align-items: center;
+  opacity: 0; transition: opacity 0.3s;
+}
+.modal-overlay.active { display: flex; opacity: 1; }
+.modal-page {
+  background: var(--color-cream);
+  border-radius: 20px;
+  max-width: 720px; width: 92%; max-height: 85vh;
+  overflow-y: auto; padding: 3rem;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+  position: relative;
+  animation: modalIn 0.35s ease;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(24px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.modal-close {
+  position: absolute; top: 1.25rem; right: 1.25rem;
+  background: var(--color-beige); border: none; border-radius: 50%;
+  width: 40px; height: 40px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s;
+}
+.modal-close:hover { background: var(--color-accent); }
+.modal-close svg { width: 18px; height: 18px; stroke: var(--color-black); }
+.modal-page h2 {
+  font-size: 1.8rem; font-weight: 800; margin-bottom: 0.5rem;
+  color: var(--color-black); letter-spacing: -0.5px;
+}
+.modal-page .modal-subtitle {
+  font-size: 1rem; color: var(--color-warm-brown);
+  margin-bottom: 2rem; font-weight: 500;
+}
+.modal-page h3 {
+  font-size: 1.15rem; font-weight: 700; margin: 1.75rem 0 0.6rem;
+  color: var(--color-dark-brown);
+}
+.modal-page p, .modal-page li {
+  font-size: 0.95rem; line-height: 1.7; color: #4a4a4a;
+}
+.modal-page ul { padding-left: 1.25rem; margin: 0.5rem 0; }
+.modal-page li { margin-bottom: 0.4rem; }
+.modal-page .contact-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-top: 1.5rem;
+}
+.modal-page .contact-card {
+  background: white; border-radius: 14px; padding: 1.5rem;
+  border: 1px solid var(--color-beige); transition: border-color 0.2s;
+}
+.modal-page .contact-card:hover { border-color: var(--color-accent); }
+.modal-page .contact-card h4 {
+  font-size: 0.95rem; font-weight: 700; margin-bottom: 0.35rem;
+  color: var(--color-black);
+}
+.modal-page .contact-card p {
+  font-size: 0.85rem; color: var(--color-warm-brown);
+}
+@media(max-width:768px) {
+  .modal-page { padding: 2rem 1.5rem; }
+  .modal-page .contact-grid { grid-template-columns: 1fr; }
+}
+
+@media(max-width:768px) {
+  .hero h1 { font-size: 2.2rem; letter-spacing: -1px; }
+  .style-grid { grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); gap: 1rem; }
+  .history-grid { grid-template-columns: 1fr; }
+  .outfit-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-content">
+    <div class="navbar-logo">OutfitGen</div>
+    <div class="navbar-links">
+      <a href="#styles">Styles</a>
+      <a href="#" onclick="openModal('aboutModal');return false">About</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-badge">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/></svg>
+    AI-Powered Style Assistant
+  </div>
+  <h1>Your Perfect Outfit,<span>Instantly Generated</span></h1>
+  <p>Select your style, and let our intelligent outfit generator create perfectly coordinated looks that match your vibe. From casual to streetwear, we've got you covered.</p>
+  <div class="hero-deco"></div>
+</section>
+
+<main class="main">
+  <div id="styles">
+    <h2 class="section-title">Choose Your Style</h2>
+    <p class="section-sub">Select a vibe and we'll create the perfect outfit combination</p>
+    <div class="style-grid" id="styleGrid"></div>
+  </div>
+
+  <div class="generate-wrap">
+    <button class="btn-generate" id="generateBtn" disabled onclick="generateOutfit()">
+      <svg id="genIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      Generate Outfit
+    </button>
+  </div>
+
+  <div id="outfitDisplay" style="display:none" class="outfit-section">
+    <div class="outfit-header">
+      <h2>Your Generated Outfit</h2>
+      <button class="btn-regen" onclick="generateOutfit()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        Regenerate
+      </button>
+    </div>
+    <div id="currentOutfit"></div>
+  </div>
+
+  <div id="historySection" style="display:none" class="history-section">
+    <h3 class="history-title">Previous Outfits</h3>
+    <div class="history-grid" id="historyGrid"></div>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <p>&copy; 2025 OutfitGen. Your AI Style Assistant.</p>
+    <div class="footer-links">
+      <a href="#" onclick="openModal('aboutModal');return false">About</a>
+      <a href="#" onclick="openModal('privacyModal');return false">Privacy</a>
+      <a href="#" onclick="openModal('termsModal');return false">Terms</a>
+      <a href="#" onclick="openModal('contactModal');return false">Contact</a>
+    </div>
+  </div>
+</footer>
+
+<!-- ABOUT MODAL -->
+<div class="modal-overlay" id="aboutModal">
+  <div class="modal-page">
+    <button class="modal-close" onclick="closeModal('aboutModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    <h2>About OutfitGen</h2>
+    <p class="modal-subtitle">Your AI-powered style companion</p>
+    <p>OutfitGen is a smart outfit generator designed to help you discover fresh, coordinated looks in seconds. Whether you're dressing for a casual day out, a formal event, or anything in between, OutfitGen takes the guesswork out of styling.</p>
+    <h3>How It Works</h3>
+    <p>Simply choose a style that matches your mood — casual, sporty, formal, streetwear, and more — and hit generate. Our intelligent matching algorithm pairs tops, bottoms, and footwear into cohesive outfits tailored to your selected vibe.</p>
+    <h3>Why OutfitGen?</h3>
+    <ul>
+      <li><strong>Effortless styling</strong> — No more standing in front of your closet wondering what goes together.</li>
+      <li><strong>Multiple styles</strong> — From laid-back casual to polished formal, we cover a wide range of aesthetics.</li>
+      <li><strong>Instant inspiration</strong> — Generate as many outfits as you like and save your favorites for later.</li>
+      <li><strong>No account needed</strong> — Start generating outfits right away, completely free.</li>
+    </ul>
+    <h3>Our Mission</h3>
+    <p>We believe everyone deserves to feel confident in what they wear. OutfitGen was built to make personal styling accessible, fun, and easy — whether you're a fashion enthusiast or someone who just wants to look good without the hassle.</p>
+  </div>
+</div>
+
+<!-- PRIVACY MODAL -->
+<div class="modal-overlay" id="privacyModal">
+  <div class="modal-page">
+    <button class="modal-close" onclick="closeModal('privacyModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    <h2>Privacy Policy</h2>
+    <p class="modal-subtitle">Last updated: April 2025</p>
+    <p>Your privacy matters to us. This policy explains what information OutfitGen collects, how it is used, and the choices you have.</p>
+    <h3>Information We Collect</h3>
+    <p>OutfitGen is designed with privacy in mind. The application runs entirely in your browser, and we do not collect, store, or transmit any personal information. Specifically:</p>
+    <ul>
+      <li>We do <strong>not</strong> require you to create an account or sign in.</li>
+      <li>We do <strong>not</strong> collect your name, email address, or any contact details.</li>
+      <li>We do <strong>not</strong> track your browsing activity across other websites.</li>
+    </ul>
+    <h3>Local Data</h3>
+    <p>Your generated outfits and style preferences are stored locally in your browser session. This data stays on your device and is not sent to any server. When you close or refresh the page, this data is cleared.</p>
+    <h3>Cookies</h3>
+    <p>OutfitGen does not use cookies for tracking or advertising. If cookies are used by our hosting provider for essential site functionality, they contain no personal information.</p>
+    <h3>Third-Party Services</h3>
+    <p>We use Google Fonts to display typography on the site. Google may collect basic usage data in accordance with their own privacy policy. No other third-party analytics or advertising services are used.</p>
+    <h3>Changes to This Policy</h3>
+    <p>We may update this privacy policy from time to time. Any changes will be reflected on this page with an updated revision date.</p>
+  </div>
+</div>
+
+<!-- TERMS MODAL -->
+<div class="modal-overlay" id="termsModal">
+  <div class="modal-page">
+    <button class="modal-close" onclick="closeModal('termsModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    <h2>Terms of Use</h2>
+    <p class="modal-subtitle">Last updated: April 2025</p>
+    <p>By using OutfitGen, you agree to the following terms. Please read them carefully.</p>
+    <h3>Use of the Service</h3>
+    <p>OutfitGen is a free, browser-based outfit generation tool provided for personal, non-commercial use. You may use the service to generate outfit ideas and draw inspiration for your personal styling.</p>
+    <h3>Intellectual Property</h3>
+    <p>All content on OutfitGen — including the design, code, text, and outfit data — is the property of OutfitGen and is protected by applicable intellectual property laws. You may not copy, reproduce, or redistribute any part of the service without written permission.</p>
+    <h3>Disclaimer</h3>
+    <p>OutfitGen provides outfit suggestions for inspiration purposes only. We make no guarantees about the availability, accuracy, or suitability of any outfit combination. The service is provided "as is" without warranties of any kind.</p>
+    <h3>Limitation of Liability</h3>
+    <p>OutfitGen and its creators shall not be held liable for any direct, indirect, or consequential damages arising from your use of the service. You use OutfitGen at your own discretion.</p>
+    <h3>Modifications</h3>
+    <p>We reserve the right to modify, suspend, or discontinue the service at any time without prior notice. We may also update these terms, with changes taking effect upon posting to this page.</p>
+    <h3>Governing Law</h3>
+    <p>These terms are governed by applicable law. Any disputes shall be resolved in accordance with the jurisdiction in which the service operator resides.</p>
+  </div>
+</div>
+
+<!-- CONTACT MODAL -->
+<div class="modal-overlay" id="contactModal">
+  <div class="modal-page">
+    <button class="modal-close" onclick="closeModal('contactModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    <h2>Get in Touch</h2>
+    <p class="modal-subtitle">We'd love to hear from you</p>
+    <p>Have a question, suggestion, or just want to say hello? Reach out through any of the channels below and we'll get back to you as soon as possible.</p>
+    <div class="contact-grid">
+      <div class="contact-card">
+        <h4>General Inquiries</h4>
+        <p>For questions about OutfitGen, feature requests, or general feedback.</p>
+        <p style="margin-top:0.75rem;font-weight:600;color:var(--color-dark-brown)">hello@outfitgen.com</p>
+      </div>
+      <div class="contact-card">
+        <h4>Support</h4>
+        <p>Experiencing an issue or need help with the site? Let us know.</p>
+        <p style="margin-top:0.75rem;font-weight:600;color:var(--color-dark-brown)">support@outfitgen.com</p>
+      </div>
+      <div class="contact-card">
+        <h4>Partnerships</h4>
+        <p>Interested in collaborating or working together? We're open to ideas.</p>
+        <p style="margin-top:0.75rem;font-weight:600;color:var(--color-dark-brown)">partners@outfitgen.com</p>
+      </div>
+      <div class="contact-card">
+        <h4>Feedback</h4>
+        <p>Love OutfitGen? Have ideas for improvement? Share your thoughts with us.</p>
+        <p style="margin-top:0.75rem;font-weight:600;color:var(--color-dark-brown)">feedback@outfitgen.com</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────
+const shirts = [
+  {name:"White Tee",style:"casual",color:"white"},
+  {name:"Flannel Shirt (red)",style:"casual",color:"red"},
+  {name:"Gym Tee (grey)",style:"sporty",color:"grey"},
+  {name:"Compression Shirt (black)",style:"sporty",color:"black"},
+  {name:"White Dress Shirt",style:"formal",color:"white"},
+  {name:"Black Button-Up",style:"formal",color:"black"},
+  {name:"Oversized Graphic Tee (black)",style:"streetwear",color:"black"},
+  {name:"Boxy Fit Tee (white)",style:"streetwear",color:"white"},
+  {name:"Street Hoodie (grey)",style:"streetwear",color:"grey"},
+  {name:"Plain Beige Tee",style:"minimal",color:"beige"},
+  {name:"Polo (navy)",style:"minimal",color:"navy"},
+  {name:"Vintage Band Tee",style:"vintage",color:"black"},
+  {name:"Retro Bowling Shirt (cream)",style:"vintage",color:"beige"},
+  {name:"Classic Polo (burgundy)",style:"vintage",color:"red"},
+  {name:"Oxford Shirt (light blue)",style:"business-casual",color:"blue"},
+  {name:"Chambray Shirt",style:"business-casual",color:"blue"},
+  {name:"Henley (grey)",style:"business-casual",color:"grey"},
+  {name:"Performance Tee (black)",style:"athleisure",color:"black"},
+  {name:"Athletic Hoodie (grey)",style:"athleisure",color:"grey"},
+  {name:"Moisture-Wicking Top (white)",style:"athleisure",color:"white"},
+  {name:"Linen Shirt (white)",style:"bohemian",color:"white"},
+  {name:"Embroidered Tunic (beige)",style:"bohemian",color:"beige"},
+  {name:"Flowing Top (cream)",style:"bohemian",color:"beige"},
+  {name:"Cable Knit Sweater (navy)",style:"preppy",color:"navy"},
+  {name:"Striped Polo",style:"preppy",color:"white"},
+  {name:"Button-Down Oxford (pink)",style:"preppy",color:"red"},
+  {name:"Distressed Band Tee",style:"grunge",color:"black"},
+  {name:"Oversized Flannel (red)",style:"grunge",color:"red"},
+  {name:"Ripped Graphic Tee (grey)",style:"grunge",color:"grey"},
+  {name:"Fitted Polo (navy)",style:"smart-casual",color:"navy"},
+  {name:"Casual Blazer Shirt (white)",style:"smart-casual",color:"white"},
+  {name:"Knit Sweater (grey)",style:"smart-casual",color:"grey"},
+  {name:"Technical Shell (black)",style:"techwear",color:"black"},
+  {name:"Performance Hoodie (grey)",style:"techwear",color:"grey"},
+  {name:"Utility Shirt (olive)",style:"techwear",color:"olive"},
+  {name:"Black Turtleneck",style:"monochrome",color:"black"},
+  {name:"White Crew Neck",style:"monochrome",color:"white"},
+  {name:"Grey Sweater",style:"monochrome",color:"grey"},
+  {name:"Tank Top (white)",style:"summer",color:"white"},
+  {name:"Short Sleeve Shirt (blue)",style:"summer",color:"blue"},
+  {name:"Lightweight Tee (beige)",style:"summer",color:"beige"},
+  {name:"Thermal Base Layer (black)",style:"winter",color:"black"},
+  {name:"Wool Sweater (navy)",style:"winter",color:"navy"},
+  {name:"Flannel Shirt (red)",style:"winter",color:"red"},
+  {name:"Fitted Dress Shirt (black)",style:"date-night",color:"black"},
+  {name:"Silk Blend Shirt (burgundy)",style:"date-night",color:"red"},
+  {name:"Premium Polo (navy)",style:"date-night",color:"navy"},
+];
+
+const pants = [
+  {name:"Jeans (blue)",style:"casual",color:"blue"},
+  {name:"Joggers (black)",style:"sporty",color:"black"},
+  {name:"Dress Pants (black)",style:"formal",color:"black"},
+  {name:"Baggy Jeans (blue)",style:"streetwear",color:"blue"},
+  {name:"Cargo Pants (olive)",style:"streetwear",color:"olive"},
+  {name:"Techwear Pants (black)",style:"streetwear",color:"black"},
+  {name:"Baggy Sweats (black)",style:"streetwear",color:"black"},
+  {name:"Baggy Sweats (grey)",style:"streetwear",color:"grey"},
+  {name:"Techwear Pants (white)",style:"streetwear",color:"white"},
+  {name:"Slim Black Pants",style:"minimal",color:"black"},
+  {name:"Slim White Pants",style:"minimal",color:"white"},
+  {name:"Khakis",style:"minimal",color:"khaki"},
+  {name:"High-Waisted Jeans (blue)",style:"vintage",color:"blue"},
+  {name:"Corduroy Pants (brown)",style:"vintage",color:"tan"},
+  {name:"Pleated Trousers (beige)",style:"vintage",color:"beige"},
+  {name:"Chinos (khaki)",style:"business-casual",color:"khaki"},
+  {name:"Dress Chinos (navy)",style:"business-casual",color:"navy"},
+  {name:"Tailored Pants (grey)",style:"business-casual",color:"grey"},
+  {name:"Tech Joggers (black)",style:"athleisure",color:"black"},
+  {name:"Performance Pants (grey)",style:"athleisure",color:"grey"},
+  {name:"Track Pants (navy)",style:"athleisure",color:"navy"},
+  {name:"Wide-Leg Linen Pants (beige)",style:"bohemian",color:"beige"},
+  {name:"Flowing Trousers (white)",style:"bohemian",color:"white"},
+  {name:"Palazzo Pants (tan)",style:"bohemian",color:"tan"},
+  {name:"Classic Khakis",style:"preppy",color:"khaki"},
+  {name:"Navy Chinos",style:"preppy",color:"navy"},
+  {name:"Pleated Pants (grey)",style:"preppy",color:"grey"},
+  {name:"Ripped Jeans (black)",style:"grunge",color:"black"},
+  {name:"Distressed Denim (blue)",style:"grunge",color:"blue"},
+  {name:"Cargo Pants (olive)",style:"grunge",color:"olive"},
+  {name:"Tailored Chinos (navy)",style:"smart-casual",color:"navy"},
+  {name:"Slim Fit Pants (black)",style:"smart-casual",color:"black"},
+  {name:"Dress Pants (grey)",style:"smart-casual",color:"grey"},
+  {name:"Cargo Techwear Pants (black)",style:"techwear",color:"black"},
+  {name:"Tactical Pants (grey)",style:"techwear",color:"grey"},
+  {name:"Multi-Pocket Pants (olive)",style:"techwear",color:"olive"},
+  {name:"Black Trousers",style:"monochrome",color:"black"},
+  {name:"White Pants",style:"monochrome",color:"white"},
+  {name:"Grey Slacks",style:"monochrome",color:"grey"},
+  {name:"Shorts (khaki)",style:"summer",color:"khaki"},
+  {name:"Linen Pants (white)",style:"summer",color:"white"},
+  {name:"Cotton Shorts (beige)",style:"summer",color:"beige"},
+  {name:"Wool Pants (black)",style:"winter",color:"black"},
+  {name:"Insulated Pants (navy)",style:"winter",color:"navy"},
+  {name:"Thick Jeans (blue)",style:"winter",color:"blue"},
+  {name:"Tailored Trousers (black)",style:"date-night",color:"black"},
+  {name:"Slim Dress Pants (navy)",style:"date-night",color:"navy"},
+  {name:"Dark Jeans (blue)",style:"date-night",color:"blue"},
+];
+
+const shoes = [
+  {name:"Air Force Ones (white)",style:"casual",color:"white"},
+  {name:"Adidas Sambas (white)",style:"casual",color:"white"},
+  {name:"Loafers",style:"casual",color:"tan"},
+  {name:"Running Shoes (black)",style:"sporty",color:"black"},
+  {name:"Training Sneakers",style:"sporty",color:"white"},
+  {name:"Basketball Shoes",style:"sporty",color:"red"},
+  {name:"Cross Trainers (grey)",style:"sporty",color:"grey"},
+  {name:"Lightweight Runners (blue)",style:"sporty",color:"blue"},
+  {name:"Gym Sneakers (black)",style:"sporty",color:"black"},
+  {name:"Trail Running Shoes",style:"sporty",color:"green"},
+  {name:"High-Top Basketball Shoes (white)",style:"sporty",color:"white"},
+  {name:"Low-Top Trainers (black)",style:"sporty",color:"black"},
+  {name:"Dress Shoes (black)",style:"formal",color:"black"},
+  {name:"High Top Jordans (red)",style:"streetwear",color:"red"},
+  {name:"Chunky Sneakers (white)",style:"streetwear",color:"white"},
+  {name:"Jordans (yellow)",style:"streetwear",color:"yellow"},
+  {name:"Jordans (white)",style:"streetwear",color:"white"},
+  {name:"Jordans (purple)",style:"streetwear",color:"purple"},
+  {name:"Air Force Ones (white)",style:"minimal",color:"white"},
+  {name:"Adidas Sambas (white)",style:"minimal",color:"white"},
+  {name:"Classic Converses (white)",style:"vintage",color:"white"},
+  {name:"Retro Sneakers (red)",style:"vintage",color:"red"},
+  {name:"Suede Loafers (brown)",style:"vintage",color:"tan"},
+  {name:"Leather Oxfords (brown)",style:"business-casual",color:"tan"},
+  {name:"Suede Loafers (tan)",style:"business-casual",color:"tan"},
+  {name:"Derby Shoes (black)",style:"business-casual",color:"black"},
+  {name:"Lifestyle Sneakers (white)",style:"athleisure",color:"white"},
+  {name:"Slip-On Trainers (black)",style:"athleisure",color:"black"},
+  {name:"Fashion Runners (grey)",style:"athleisure",color:"grey"},
+  {name:"Leather Sandals (brown)",style:"bohemian",color:"tan"},
+  {name:"Espadrilles (beige)",style:"bohemian",color:"beige"},
+  {name:"Canvas Shoes (white)",style:"bohemian",color:"white"},
+  {name:"Boat Shoes (brown)",style:"preppy",color:"tan"},
+  {name:"White Sneakers",style:"preppy",color:"white"},
+  {name:"Loafers (navy)",style:"preppy",color:"navy"},
+  {name:"Combat Boots (black)",style:"grunge",color:"black"},
+  {name:"Doc Martens",style:"grunge",color:"black"},
+  {name:"Chunky Boots (brown)",style:"grunge",color:"tan"},
+  {name:"Chelsea Boots (black)",style:"smart-casual",color:"black"},
+  {name:"Brogues (brown)",style:"smart-casual",color:"tan"},
+  {name:"Dress Sneakers (white)",style:"smart-casual",color:"white"},
+  {name:"Technical Sneakers (black)",style:"techwear",color:"black"},
+  {name:"Tactical Boots (grey)",style:"techwear",color:"grey"},
+  {name:"High-Tech Runners (white)",style:"techwear",color:"white"},
+  {name:"Black Sneakers",style:"monochrome",color:"black"},
+  {name:"White Trainers",style:"monochrome",color:"white"},
+  {name:"Grey Shoes",style:"monochrome",color:"grey"},
+  {name:"Sandals (brown)",style:"summer",color:"tan"},
+  {name:"Canvas Sneakers (white)",style:"summer",color:"white"},
+  {name:"Slip-Ons (beige)",style:"summer",color:"beige"},
+  {name:"Winter Boots (black)",style:"winter",color:"black"},
+  {name:"Insulated Sneakers (grey)",style:"winter",color:"grey"},
+  {name:"Waterproof Boots (brown)",style:"winter",color:"tan"},
+  {name:"Polished Oxfords (black)",style:"date-night",color:"black"},
+  {name:"Dress Loafers (brown)",style:"date-night",color:"tan"},
+  {name:"Chelsea Boots (navy)",style:"date-night",color:"navy"},
+];
+
+const jackets = [
+  {name:"Denim Jacket",style:"casual",color:"blue"},
+  {name:"Track Jacket (black)",style:"sporty",color:"black"},
+  {name:"Blazer (black)",style:"formal",color:"black"},
+  {name:"Puffer Jacket (black)",style:"streetwear",color:"black"},
+  {name:"Oversized Hoodie (grey)",style:"streetwear",color:"grey"},
+  {name:"Windbreaker (light blue)",style:"streetwear",color:"light blue"},
+  {name:"Windbreaker (white)",style:"streetwear",color:"white"},
+  {name:"Neutral Coat (beige)",style:"minimal",color:"beige"},
+  {name:"Vintage Leather Jacket (brown)",style:"vintage",color:"tan"},
+  {name:"Retro Bomber (olive)",style:"vintage",color:"olive"},
+  {name:"Classic Varsity Jacket",style:"vintage",color:"navy"},
+  {name:"Sport Coat (navy)",style:"business-casual",color:"navy"},
+  {name:"Unstructured Blazer (grey)",style:"business-casual",color:"grey"},
+  {name:"Casual Jacket (tan)",style:"business-casual",color:"tan"},
+  {name:"Tech Hoodie (black)",style:"athleisure",color:"black"},
+  {name:"Zip-Up Track Jacket (grey)",style:"athleisure",color:"grey"},
+  {name:"Athletic Windbreaker (navy)",style:"athleisure",color:"navy"},
+  {name:"Kimono Jacket (beige)",style:"bohemian",color:"beige"},
+  {name:"Crochet Cardigan (white)",style:"bohemian",color:"white"},
+  {name:"Flowing Duster (tan)",style:"bohemian",color:"tan"},
+  {name:"Navy Blazer",style:"preppy",color:"navy"},
+  {name:"Argyle Cardigan",style:"preppy",color:"grey"},
+  {name:"Quarter-Zip Sweater (white)",style:"preppy",color:"white"},
+  {name:"Oversized Flannel (black)",style:"grunge",color:"black"},
+  {name:"Distressed Denim Jacket",style:"grunge",color:"blue"},
+  {name:"Leather Biker Jacket",style:"grunge",color:"black"},
+  {name:"Tailored Blazer (navy)",style:"smart-casual",color:"navy"},
+  {name:"Sports Jacket (grey)",style:"smart-casual",color:"grey"},
+  {name:"Casual Coat (black)",style:"smart-casual",color:"black"},
+  {name:"Technical Shell Jacket (black)",style:"techwear",color:"black"},
+  {name:"Urban Utility Jacket (grey)",style:"techwear",color:"grey"},
+  {name:"Waterproof Layer (olive)",style:"techwear",color:"olive"},
+  {name:"Black Overcoat",style:"monochrome",color:"black"},
+  {name:"White Bomber",style:"monochrome",color:"white"},
+  {name:"Grey Trench",style:"monochrome",color:"grey"},
+  {name:"Light Linen Jacket (white)",style:"summer",color:"white"},
+  {name:"Unlined Blazer (beige)",style:"summer",color:"beige"},
+  {name:"Cotton Overshirt (blue)",style:"summer",color:"blue"},
+  {name:"Parka (black)",style:"winter",color:"black"},
+  {name:"Wool Coat (navy)",style:"winter",color:"navy"},
+  {name:"Down Jacket (grey)",style:"winter",color:"grey"},
+  {name:"Velvet Blazer (black)",style:"date-night",color:"black"},
+  {name:"Tailored Sport Coat (navy)",style:"date-night",color:"navy"},
+  {name:"Leather Jacket (brown)",style:"date-night",color:"tan"},
+];
+
+const stylingTips = {
+  casual:["Perfect for everyday wear","Comfortable and effortless","Great for weekend outings","Keep accessories minimal"],
+  sporty:["Ideal for active lifestyles","Breathable and functional","Add a sports watch","Performance meets style"],
+  formal:["Sharp and professional","Perfect for business meetings","Don't forget a belt","Confidence is key"],
+  streetwear:["Bold and statement-making","Layer with confidence","Oversized fits work best","Express your personality"],
+  minimal:["Less is more","Clean and sophisticated","Focus on quality fabrics","Timeless elegance"],
+  vintage:["Timeless classics never fade","Mix retro with modern pieces","Thrift store treasures shine here","Nostalgia meets style"],
+  "business-casual":["Professional yet approachable","Perfect for office Fridays","Balance polish with comfort","Smart without being stiff"],
+  athleisure:["Gym to street seamlessly","Comfort without compromising style","Functional fashion at its best","Active lifestyle approved"],
+  bohemian:["Free-spirited and artistic","Embrace natural fabrics","Layer with flowing pieces","Express your creative soul"],
+  preppy:["Classic collegiate charm","Crisp and put-together","Heritage meets modern","Polished casual excellence"],
+  grunge:["Edgy and rebellious","Embrace the imperfect","Layer for dimension","Alternative fashion icon"],
+  "smart-casual":["Elevated everyday style","Versatile and refined","Dress up or down easily","Modern sophistication"],
+  techwear:["Futuristic functionality","Weather-ready performance","Utility meets aesthetics","Urban warrior approved"],
+  monochrome:["Power in simplicity","One color, infinite style","Focus on texture and fit","Minimalist impact"],
+  summer:["Light and breezy","Beat the heat in style","Breathable fabrics essential","Vacation-ready vibes"],
+  winter:["Layer for warmth and style","Cozy meets fashionable","Cold weather warrior","Seasonal comfort redefined"],
+  "date-night":["Make a lasting impression","Elevated and intentional","Confidence is your best accessory","Romance meets refinement"],
+};
+
+// ── STYLE CARDS ───────────────────────────────────────
+const styleList = [
+  {id:"casual",label:"Casual",desc:"Everyday comfort",icon:'<path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.57a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.57a2 2 0 00-1.34-2.23z"/>'},
+  {id:"sporty",label:"Sporty",desc:"Active lifestyle",icon:'<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>'},
+  {id:"formal",label:"Formal",desc:"Professional edge",icon:'<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/>'},
+  {id:"streetwear",label:"Streetwear",desc:"Urban bold",icon:'<path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/>'},
+  {id:"minimal",label:"Minimal",desc:"Clean & timeless",icon:'<polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/>'},
+  {id:"vintage",label:"Vintage",desc:"Retro classic",icon:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'},
+  {id:"business-casual",label:"Business Casual",desc:"Smart & relaxed",icon:'<path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>'},
+  {id:"athleisure",label:"Athleisure",desc:"Gym to street",icon:'<path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/>'},
+  {id:"bohemian",label:"Bohemian",desc:"Free-spirited",icon:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>'},
+  {id:"preppy",label:"Preppy",desc:"Collegiate charm",icon:'<path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>'},
+  {id:"grunge",label:"Grunge",desc:"Edgy alternative",icon:'<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'},
+  {id:"smart-casual",label:"Smart Casual",desc:"Elevated everyday",icon:'<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>'},
+  {id:"techwear",label:"Techwear",desc:"Futuristic utility",icon:'<rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/>'},
+  {id:"monochrome",label:"Monochrome",desc:"One color focus",icon:'<circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 011.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>'},
+  {id:"summer",label:"Summer",desc:"Light & breezy",icon:'<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>'},
+  {id:"winter",label:"Winter",desc:"Cozy warmth",icon:'<line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/><path d="M20 16l-4-4 4-4"/><path d="M4 8l4 4-4 4"/><path d="M16 4l-4 4-4-4"/><path d="M8 20l4-4 4 4"/>'},
+  {id:"date-night",label:"Date Night",desc:"Romance ready",icon:'<path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>'},
+];
+
+function buildStyleGrid() {
+  const grid = document.getElementById('styleGrid');
+  styleList.forEach(s => {
+    const btn = document.createElement('button');
+    btn.className = 'style-card';
+    btn.dataset.id = s.id;
+    btn.innerHTML = `
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${s.icon}</svg>
+      </div>
+      <div class="card-label">${s.label}</div>
+      <div class="card-desc">${s.desc}</div>
+      <div class="card-dot"></div>
+    `;
+    btn.onclick = () => selectStyle(s.id);
+    grid.appendChild(btn);
+  });
+}
+
+// ── STATE ─────────────────────────────────────────────
+let selectedStyle = null;
+let outfitHistory = [];
+
+function selectStyle(id) {
+  selectedStyle = id;
+  document.querySelectorAll('.style-card').forEach(c => {
+    c.classList.toggle('selected', c.dataset.id === id);
+  });
+  document.getElementById('generateBtn').disabled = false;
+}
+
+// ── COLOR LOGIC ───────────────────────────────────────
+function goodColors(a, b) {
+  const neutrals = new Set(["black","white","grey","beige","tan","khaki","navy"]);
+  return neutrals.has(a.color) || neutrals.has(b.color) || a.color === b.color;
+}
+
+function getOutfit(style) {
+  const s = shirts.filter(x=>x.style===style);
+  const p = pants.filter(x=>x.style===style);
+  const sh = shoes.filter(x=>x.style===style);
+  const j = jackets.filter(x=>x.style===style);
+  if (!s.length||!p.length||!sh.length||!j.length) return null;
+  for (let i=0;i<100;i++) {
+    const shirt=s[Math.random()*s.length|0];
+    const pant=p[Math.random()*p.length|0];
+    const shoe=sh[Math.random()*sh.length|0];
+    const jacket=j[Math.random()*j.length|0];
+    if (goodColors(shirt,pant)&&goodColors(shirt,shoe))
+      return {shirt,pant,shoe,jacket,style};
+  }
+  return null;
+}
+
+function colorHex(c) {
+  const map={white:"#f5f5f5",beige:"#E8DCC4",navy:"#1e3a8a",olive:"#556b2f",
+    khaki:"#c3b091",tan:"#d2b48c","light blue":"#87ceeb",grey:"#9e9e9e",
+    black:"#1A1A1A",red:"#e53935",blue:"#1565c0",green:"#2e7d32",
+    yellow:"#f9a825",purple:"#6a1b9a"};
+  return map[c]||c;
+}
+
+function outfitCardHTML(outfit) {
+  const items = [
+    {label:"TOP",name:outfit.shirt.name,color:outfit.shirt.color,icon:'<path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.57a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.57a2 2 0 00-1.34-2.23z"/>'},
+    {label:"BOTTOM",name:outfit.pant.name,color:outfit.pant.color,icon:'<path d="M6 2L3 6v14a2 2 0 002 2h4a2 2 0 002-2v-5h2v5a2 2 0 002 2h4a2 2 0 002-2V6l-3-4z"/>'},
+    {label:"FOOTWEAR",name:outfit.shoe.name,color:outfit.shoe.color,icon:'<path d="M3 11l19-9-9 19-2-8-8-2z"/>'},
+    {label:"OUTERWEAR",name:outfit.jacket.name,color:outfit.jacket.color,icon:'<polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/>'},
+  ];
+  const tips = stylingTips[outfit.style]||[];
+  const tip = tips[Math.random()*tips.length|0];
+  const border = outfit.shoe.color==='white'?'border:1px solid #e0e0e0;':'';
+  return `
+    <div class="outfit-card">
+      <div class="outfit-card-header">
+        <div class="outfit-card-title">Your ${outfit.style} outfit</div>
+        <div class="outfit-badge">${outfit.style}</div>
+      </div>
+      <div class="outfit-items">
+        ${items.map(item=>`
+          <div class="outfit-item">
+            <div class="item-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${item.icon}</svg>
+            </div>
+            <div class="item-info">
+              <span class="item-label">${item.label}</span>
+              <span class="item-name">${item.name}</span>
+            </div>
+            <div class="color-dot" style="background:${colorHex(item.color)};${item.color==='white'?'border:1px solid #ddd;':''}"></div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="styling-tip">
+        <div class="tip-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <p class="tip-text">${tip}</p>
+      </div>
+    </div>
+  `;
+}
+
+function generateOutfit() {
+  if (!selectedStyle) return;
+  const btn = document.getElementById('generateBtn');
+  const icon = document.getElementById('genIcon');
+  btn.disabled = true;
+  icon.innerHTML = '<path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>';
+  icon.classList.add('spinning');
+
+  setTimeout(() => {
+    const outfit = getOutfit(selectedStyle);
+    if (outfit) {
+      outfitHistory.unshift(outfit);
+      if (outfitHistory.length > 3) outfitHistory.pop();
+
+      document.getElementById('currentOutfit').innerHTML = outfitCardHTML(outfit);
+      document.getElementById('outfitDisplay').style.display = 'block';
+
+      if (outfitHistory.length > 1) {
+        document.getElementById('historyGrid').innerHTML = outfitHistory.slice(1).map(o=>outfitCardHTML(o)).join('');
+        document.getElementById('historySection').style.display = 'block';
+      }
+      showToast('Outfit generated!', 'success');
+    } else {
+      showToast('Could not generate outfit. Try another style!', 'error');
+    }
+
+    btn.disabled = false;
+    icon.innerHTML = '<path d="M5 12h14M12 5l7 7-7 7"/>';
+    icon.classList.remove('spinning');
+  }, 600);
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(()=>{ t.className = 'toast'; }, 3000);
+}
+
+buildStyleGrid();
+
+// ── MODAL FUNCTIONS ──────────────────────────────────
+function openModal(id) {
+  const m = document.getElementById(id);
+  m.style.display = 'flex';
+  requestAnimationFrame(() => m.classList.add('active'));
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+  const m = document.getElementById(id);
+  m.classList.remove('active');
+  document.body.style.overflow = '';
+  setTimeout(() => { m.style.display = 'none'; }, 300);
+}
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) closeModal(overlay.id);
+  });
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.active').forEach(m => closeModal(m.id));
+  }
+});
+</script>
+</body>
+</html>
